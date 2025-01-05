@@ -3,6 +3,8 @@ const cors = require('cors');
 const morgan = require('morgan');
 const { connectDB } = require('./config/db');
 const authRouter = require('./routes/authRoutes');
+const tradeRouter = require('./routes/tradeRoutes');
+const tradingRouter = require('./routes/tradingRoutes');
 
 const app = express();
 
@@ -16,6 +18,12 @@ connectDB();
 
 // Routes
 app.use('/api/auth', authRouter);
+app.use('/api/trades', tradeRouter);
+app.use('/api/trading', tradingRouter);
+
+app.get('/', (req, res) => {
+  res.json({ message: 'Welcome to the Polygon API' });
+});
 
 // Error handler
 app.use((err, req, res, next) => {

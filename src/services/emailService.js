@@ -22,7 +22,7 @@ const sendMail = (to, subject, text) => {
 
 const verifyUserEmail = (to, token) => {
   const subject = 'Verify your email';
-  const text = `Please verify your email by clicking the following link: ${process.env.BASE_URL}/verify-email?token=${token}`;
+  const text = `Please verify your email by clicking the following link: ${process.env.BASE_URL}/api/auth/verify-email?token=${token}`;
   return sendMail(to, subject, text);
 };
 
@@ -44,9 +44,16 @@ const notificationEmail = (to, message) => {
   return sendMail(to, subject, text);
 };
 
+const send2FACode = (to, code) => {
+    const subject = 'Your 2FA Code';
+    const text = `Your 2FA code is: ${code}`;
+    return sendMail(to, subject, text);
+};
+
 module.exports = {
   verifyUserEmail,
   resetPasswordEmail,
   welcomeNewUserEmail,
   notificationEmail,
+  send2FACode
 };
