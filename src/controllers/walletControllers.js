@@ -1,11 +1,29 @@
-const axios = require("axios");
+require("dotenv").config();
 const Web3 = require("web3");
-const web3 = new Web3(process.env.INFURA_API_URL);
+
 const Transaction = require("../models/Transaction");
 const User = require("../models/User");
 
+// Create a Web3 instance using the provider URL from Infura
+const web3 = new Web3(
+  new Web3.providers.HttpProvider(process.env.INFURA_API_URL)
+);
+
+const getWalletBalance = async (req, res) => {
+  const { address } = req.params;
+
+  try {
+    const balance = await web3.eth.getBalance(address);
+    res.status(200).json({ balance: web3.utils.fromWei(balance, "ether") });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching wallet balance", error: error.message });
+  }
+};
+
 const depositHandler = async (req, res) => {
-  const { fromAddress, amount, email } = req.body; // Amount in Ether
+  const { fromAddress, toAddress, amount, email } = req.body; // Amount in Ether
 
   try {
     //find user by email
@@ -17,15 +35,28 @@ const depositHandler = async (req, res) => {
         .json({ success: false, messaage: "User with email does not exists." });
     }
 
+    //Estimate gas limit
+    const gasLimit = await web3.eth.estimateGas({
+      from: fromAddress,
+      to: toAddress,
+      value: web3.utils.toWei(amount, "ether"),
+    });
+
+    //Get transaction gas price
+    const gasPrice = await web3.eth.getGasPrice();
+
+    //Transaction Object
     const transactionOpt = {
       from: fromAddress,
-      to: account.address,
+      to: toAddress,
       value: web3.utils.toWei(amount, "ether"),
+      gas: gasLimit,
+      gasPrice,
     };
 
     const signedTransaction = await web3.eth.accounts.signTransaction(
       transactionOpt,
-      process.env.PRIVATE_KEY
+      process.env.WALLET_PRIVATE_KEY
     );
 
     const receipt = await web3.eth.sendSignedTransaction(
@@ -93,6 +124,30 @@ const withdrawHandler = async (req, res) => {
   }
 };
 
+const sendTransaction = async (req, res) => {
+  const { to, value, privateKey } = req.body;
+
+  try {
+    const signedTransaction = await web3.eth.accounts.signTransaction(
+      {
+        to,
+        value: web3.utils.toWei(value, "ether"),
+        gas: 2000000,
+      },
+      privateKey
+    );
+
+    const receipt = await web3.eth.sendSignedTransaction(
+      signedTransaction.rawTransaction
+    );
+    res.status(200).json({ receipt });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error sending transaction", error: error.message });
+  }
+};
+
 const transactionHandler = async (req, res) => {
   const { walletAddress } = req.params;
 
@@ -132,4 +187,10 @@ async function getTransactionsForUser(address) {
   }
 }
 
-module.exports = { depositHandler, withdrawHandler, transactionHandler };
+module.exports = {
+  depositHandler,
+  getWalletBalance,
+  sendTransaction,
+  transactionHandler,
+  withdrawHandler,
+};
