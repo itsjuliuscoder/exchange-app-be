@@ -10,9 +10,7 @@ app.use(authRoutes);
 app.use(walletRoutes);
 
 //Initializing web3
-const web3 = new Web3(
-  new Web3.providers().HttpProvider(process.env.INFURA_API_URL)
-);
+const web3 = new Web3(process.env.INFURA_API_URL);
 const account = web3.eth.account.privateKeyToAccount(process.env.PRIVATE_KEY);
 web3.eth.accounts.wallet.add(account);
 web3.eth.defaultAccount = account.address;
