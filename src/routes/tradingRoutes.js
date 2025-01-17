@@ -1,9 +1,30 @@
-const express = require('express');
+const express = require("express");
+const tradingController = require("../controllers/tradingController");
 const router = express.Router();
-const tradeController = require('../controllers/tradingController');
 
-router.get('/quote/:symbol', tradeController.getQuote);
-router.get('/intraday/:symbol/:interval', tradeController.getIntraday);
-router.get('/daily/:symbol', tradeController.getDaily);
+
+//Trade Signal 
+router.post('/create', tradingController.createTrade);
+router.get('/list', tradingController.getAllTrades);
+// router.put('/outcome/:tradeId', tradingController.tradeOutcome);
+
+
+// Market Data
+router.get("/market/data", tradingController.fetchMarketData);
+router.get("/market/tickers/:ticker", tradingController.fetchTickerInfo);
+
+
+// Trading Operations
+router.post("/trade/place-order", tradingController.placeOrder);
+router.post("/trade/cancel-order", tradingController.cancelOrder);
+router.get("/trade/order-history", tradingController.fetchOrderHistory);
+
+
+// Crypto
+router.get('/crypto/coin/:coinId', tradingController.getCoin);
+router.get('/crypto/market', tradingController.getMarket);
+router.get('/crypto/historical/:coinId/:date', tradingController.getHistorical);
+router.get('/crypto/all-coins', tradingController.getAllCoins); // New route for fetching all coins
+router.get('/crypto/all-markets', tradingController.getAllMarkets); // New route for fetching all markets
 
 module.exports = router;

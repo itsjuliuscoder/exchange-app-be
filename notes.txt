@@ -1,0 +1,3 @@
+ETF
+Indices=S&P 500
+

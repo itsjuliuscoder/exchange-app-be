@@ -1,21 +1,16 @@
 const express = require('express');
-const { getAdminDashboard, manageUsers, createAdmin, updateAdmin, manageTransactions } = require('../controllers/adminController');
+const { createAdmin, blockUser, editBalance, getAdminStats, getAllUsers, getUserById} = require('../controllers/adminController');
+const { checkAdmin } = require('../middlewares/checkAdmin');
 
 const router = express.Router();
 
-// Controller functions
-
-// Admin dashboard route
-router.get('/dashboard', getAdminDashboard);
-
-// Manage users route
-router.get('/users', manageUsers);
-
-// Manage transactions route
-router.get('/transactions', manageTransactions);
-
+// Route to create a new admin (protected)
 router.post('/create-admin', createAdmin);
-
-router.put('/update-admin/:id', updateAdmin);   
+router.patch('/block-user/:userId', checkAdmin, blockUser);
+router.patch('/edit-balance/:userId', checkAdmin, editBalance);
+router.get('/get-stats', getAdminStats);
+router.put('/block-user/:userId', blockUser);
+router.get('/users', getAllUsers);
+router.get('/users/:userId', getUserById);
 
 module.exports = router;

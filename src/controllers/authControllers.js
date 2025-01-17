@@ -53,35 +53,39 @@ const register = async (req, res) => {
 };
 
 const login = async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  
+  const { email, password } = req.body;
+  
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    if (user.isBlocked) {
+      return res.status(403).json({ message: 'User is blocked' });
     }
   
-    const { email, password } = req.body;
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    } 
   
-    try {
-      const user = await User.findOne({ email });
-      if (!user) {
-        return res.status(400).json({ message: 'Invalid credentials' });
-      }
+    const twoFACode = generate2FACode();
+    user.twoFACode = twoFACode;
+    user.twoFACodeExpires = Date.now() + 30 * 60 * 1000; // Code expires in 10 minutes
+    await user.save();
   
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        return res.status(400).json({ message: 'Invalid credentials' });
-      }
+    await emailService.send2FACode(email, twoFACode);
   
-      const twoFACode = generate2FACode();
-      user.twoFACode = twoFACode;
-      user.twoFACodeExpires = Date.now() + 10 * 60 * 1000; // Code expires in 10 minutes
-      await user.save();
-  
-      await emailService.send2FACode(email, twoFACode);
-  
-      res.status(200).json({ message: '2FA code sent to email' });
-    } catch (error) {
+    res.status(200).json({ message: '2FA code sent to email' });
+  } catch (error) {
       res.status(500).json({ message: 'Server error' });
-    }
+  }
 };
 
 const verifyEmail = async (req, res) => {
@@ -175,6 +179,35 @@ const updatePassword = async (req, res) => {
     }
 };
 
+const adminLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Check if the user exists
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Check if the user is an admin
+    if (!user.isAdmin) {
+      return res.status(403).json({ message: 'Access denied. Admins only.' });
+    }
+
+    // Verify password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
+
+    // Generate JWT token
+    const token = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, process.env.JWT_SECRET, {
+      expiresIn: '1h',
+    });
+
+    // Send the response
+    res.json({ token, isAdmin: user.isAdmin, message: 'Admin login successful' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
 const verify2FA = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -254,5 +287,6 @@ module.exports = {
   resetPassword,
   validate,
   verify2FA,
-  updatePassword
+  updatePassword,
+  adminLogin
 };

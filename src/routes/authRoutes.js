@@ -9,5 +9,6 @@ router.post('/refresh-token', authControllers.validate('refreshToken'), authCont
 router.post('/reset-password', authControllers.validate('resetPassword'), authControllers.resetPassword);
 router.post('/verify-2fa', authControllers.validate('verify2FA'), authControllers.verify2FA);
 router.post('/update-password', authControllers.validate('updatePassword'), authControllers.updatePassword);
+router.post('/admin/login', authControllers.adminLogin);
 
 module.exports = router;

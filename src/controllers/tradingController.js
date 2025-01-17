@@ -1,40 +1,206 @@
-const alphaVantageService = require('../services/alphaVantageService');
+const polygonService = require("../services/polygonService");
+const coinGeckoService = require('../services/coinGeckoService');
+const User = require('../models/User');
+const Wallet = require('../models/Wallet');
+const Signal = require('../models/Signal');
+const Trade = require('../models/Trade');
 
-const getQuote = async (req, res) => {
-  const { symbol } = req.params;
 
-  try {
-    const quote = await alphaVantageService.getStockQuote(symbol);
-    res.status(200).json(quote);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching stock quote' });
-  }
+const createTrade = async (req, res) => {
+    const { userId, signalId, tradeType, amount, units, interval } = req.body;
+  
+    console.log("req.body -->", req.body);
+  
+    try {
+  
+      // Validate user
+      const user = await User.findById(userId);
+      if (!user) return res.status(404).json({ message: 'User not found' });
+      // console.log("user -->", user);
+  
+      //Validate signal
+      const signal = await Signal.findById(signalId);
+      if (!signal) return res.status(404).json({ message: 'Signal not found' });
+
+      // Determine wallet type
+      const walletType = tradeType.toLowerCase() === 'buy' ? 'fiat' : 'crypto';
+      const wallet = await Wallet.findOne({ userId: userId });
+        
+      if (!wallet) {
+        return res.status(400).json({ message: 'User wallet not found' });
+      }
+
+      console.log("wallet -->", wallet);
+
+  
+      // Fetch the asset's current value
+      const currentValue = 1000; // Placeholder value, replace with actual asset value fetching logic
+  
+      // Calculate the total cost of the trade
+      const totalCost = tradeType.toLowerCase() === 'buy' ? parseInt(amount) : units * currentValue;
+  
+      // Validate wallet balance for trade
+      if (tradeType.toLowerCase() === 'buy' && wallet.balance < totalCost) {
+        return res.status(400).json({ message: 'Insufficient wallet balance' });
+      }
+  
+      if (tradeType.toLowerCase() === 'sell' && wallet.balance < units) {
+        return res.status(400).json({ message: 'Insufficient asset units to sell' });
+      }
+  
+      // Deduct or add balance for the trade
+      const bal = tradeType.toLowerCase() == 'buy' ? wallet.balance - totalCost : wallet.balance + totalCost;
+
+      wallet.balance = bal;
+  
+      await wallet.save();
+  
+      // Create the trade record
+      const trade = await Trade.create({
+        userId: userId,
+        signalId: signalId,
+        tradeType,
+        amount,
+        units,
+        interval,
+      });
+  
+      res.json({ message: 'Trade executed successfully', trade });
+    } catch (error) {
+      res.status(500).json({ message: 'Internal Server Error', error });
+    }
 };
 
-const getIntraday = async (req, res) => {
-  const { symbol, interval } = req.params;
+const getAllTrades = async (req, res) => {
+    try {
+        const trades = await Trade.find();
+        const tradesWithSignals = await Promise.all(trades.map(async (trade) => {
+            const signal = await Signal.findById(trade.signalId);
+            return {
+                ...trade.toObject(),
+                signalDetails: signal
+            };
+        }));
+        res.json(tradesWithSignals);
+        // res.json(trades);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}
 
-  try {
-    const data = await alphaVantageService.getIntradayData(symbol, interval);
-    res.status(200).json(data);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching intraday data' });
-  }
+const fetchMarketData = async (req, res) => {
+    try {
+        const data = await polygonService.getMarketData();
+        console.log("market data response -->", data);
+        res.json(data);
+    } catch (error) {
+        console.log("error", error);
+        res.status(500).json({ error: error.message });
+    }
 };
 
-const getDaily = async (req, res) => {
-  const { symbol } = req.params;
-
-  try {
-    const data = await alphaVantageService.getDailyData(symbol);
-    res.status(200).json(data);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching daily data' });
-  }
+const fetchTickerInfo = async (req, res) => {
+    try {
+        const { ticker } = req.params;
+        const data = await polygonService.getTickerInfo(ticker);
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 };
+
+const placeOrder = async (req, res) => {
+    try {
+        const orderData = req.body;
+        const response = await polygonService.placeOrder(orderData);
+        res.json(response);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const cancelOrder = async (req, res) => {
+    try {
+        const { orderId } = req.body;
+        const response = await polygonService.cancelOrder(orderId);
+        res.json(response);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const fetchOrderHistory = async (req, res) => {
+    try {
+        const { userId } = req.query;
+        const response = await polygonService.getOrderHistory(userId);
+        res.json(response);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const getCoin = async (req, res) => {
+    const { coinId } = req.params;
+
+    try {
+        const coinData = await coinGeckoService.getCoinData(coinId);
+        res.status(200).json(coinData);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching coin data' });
+    }
+};
+
+const getMarket = async (req, res) => {
+const { vsCurrency, ids } = req.query;
+
+try {
+    const marketData = await coinGeckoService.getMarketData(vsCurrency, ids);
+    res.status(200).json(marketData);
+} catch (error) {
+    res.status(500).json({ message: 'Error fetching market data' });
+}
+};
+
+const getHistorical = async (req, res) => {
+    const { coinId, date } = req.params;
+
+    try {
+        const historicalData = await coinGeckoService.getHistoricalData(coinId, date);
+        res.status(200).json(historicalData);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching historical data' });
+    }
+};
+
+const getAllCoins = async (req, res) => {
+    try {
+      const allCoins = await coinGeckoService.getAllCoins();
+      res.status(200).json(allCoins);
+    } catch (error) {
+      res.status(500).json({ message: 'Error fetching all coins' });
+    }
+};
+
+const getAllMarkets = async (req, res) => {
+    try {
+        const allMarkets = await coinGeckoService.getAllMarkets();
+        res.status(200).json(allMarkets);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching all markets' });
+    }
+}
 
 module.exports = {
-  getQuote,
-  getIntraday,
-  getDaily,
+    fetchMarketData,
+    fetchTickerInfo,
+    placeOrder,
+    cancelOrder,
+    fetchOrderHistory,
+    getCoin,
+    getMarket,
+    getHistorical,
+    getAllCoins,
+    getAllMarkets,
+    createTrade,
+    getAllTrades
 };

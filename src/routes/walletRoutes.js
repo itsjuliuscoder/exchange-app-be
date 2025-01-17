@@ -2,7 +2,13 @@ const express = require('express');
 const router = express.Router();
 const walletControllers = require('../controllers/walletControllers');
 
-router.get('/balance/:address', walletControllers.getWalletBalance);
-router.post('/send', walletControllers.sendTransaction);
+router.post('/create', walletControllers.createWallet);
+
+router.put('/update-balance', walletControllers.updateWalletBalance);
+
+router.get('/list-all-wallets', walletControllers.listAllWallets);
+
+router.get('/get-wallet/:userId', walletControllers.getWalletByUserId);
+
 
 module.exports = router;
