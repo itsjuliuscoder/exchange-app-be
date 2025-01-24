@@ -241,6 +241,40 @@ exports.declineTransactionWithdrawal = async (req, res) => {
 
 }
 
+exports.getTotalWithdrawals = async (req, res) => {
+    try {
+        const totalWithdrawals = await Transaction.aggregate([
+            { $match: { type: 'withdrawal', status: 'approved' } },
+            { $group: { _id: null, total: { $sum: '$amount' } } },
+        ]);
+        res.json({ totalWithdrawals: totalWithdrawals[0]?.total || 0 });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.getTotalDeposits = async (req, res) => {
+    try {
+        const totalDeposits = await Transaction.aggregate([
+            { $match: { type: 'deposit', status: 'approved' } },
+            { $group: { _id: null, total: { $sum: '$amount' } } },
+        ]);
+        res.json({ totalDeposits: totalDeposits[0]?.total || 0 });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
+exports.getWithdrawalRequests = async (req, res) => {
+    try {
+        const withdrawalRequests = await Transaction.find({ type: 'withdrawal', status: 'pending' });
+        const count = await Transaction.countDocuments({ type: 'withdrawal', status: 'pending' });
+        res.json({ withdrawal: withdrawalRequests, totalCount: count });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
 
 
 

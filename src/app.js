@@ -8,8 +8,11 @@ const tradingRouter = require('./routes/tradingRoutes');
 const adminRouter = require('./routes/adminRoutes');
 const transactionRouter = require('./routes/transactionRoutes');
 const walletRouter = require('./routes/walletRoutes');
+// const startEmailCronJob = require('./jobs/emailCron');
 
 const app = express();
+
+// startEmailCronJob();
 
 // Middleware
 app.use(cors());

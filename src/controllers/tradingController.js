@@ -88,6 +88,57 @@ const getAllTrades = async (req, res) => {
     }
 }
 
+const tradeOutcome = async (req, res) => {
+    const { tradeId, userId, signalId, status, profit } = req.body;
+  
+    try {
+        
+        const trade = await Trade.findById(tradeId);
+        
+        // Check if trade exists
+        if (!trade) {
+            return res.status(404).json({ message: 'Trade not found' });
+        }
+
+        // Check if trade is already processed
+        if (trade.processed) {
+            return res.status(400).json({ message: 'Trade outcome already processed' });
+        }
+
+        // Check for the Signal 
+        const signal = await Signal.findById(signalId);
+        if (!signal) {
+            return res.status(404).json({ message: 'Signal not found' });
+        }
+
+        // determine the trade outcome 
+        if (trade.direction.toLowerCase() !== signal.direction.toLowerCase()) {
+            status = 'loss';
+            profit = -Math.abs(profit); // Ensure profit is negative for a loss
+        }
+
+        // Calculate profit/loss based on leverage
+        const profit = (trade.leverage / 100) * trade.amount * (outcome === 'win' ? 1 : -1);
+
+        // Update Customer Wallet Balance
+        const wallet = await Wallet.findOne({ userId: userId });
+        wallet.balance += profit;
+  
+        trade.status = status;
+        trade.profit = profit;
+        trade.processed = true;
+  
+        await trade.save();
+    
+        res.json({ message: 'Trade outcome processed successfully', trade });
+
+    } catch (error) {
+
+        res.status(500).json({ message: 'Internal Server Error', error });
+
+    }
+}
+
 const fetchMarketData = async (req, res) => {
     try {
         const data = await polygonService.getMarketData();

@@ -50,10 +50,18 @@ const send2FACode = (to, code) => {
     return sendMail(to, subject, text);
 };
 
+const sendMailMessage = (to, subject, message) => {
+    const subj = subject;
+    const text = message;
+
+    return sendMail(to, subj, text); 
+}
+
 module.exports = {
   verifyUserEmail,
   resetPasswordEmail,
   welcomeNewUserEmail,
   notificationEmail,
-  send2FACode
+  send2FACode,
+  sendMailMessage
 };
