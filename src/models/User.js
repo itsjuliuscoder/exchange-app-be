@@ -18,6 +18,10 @@ const userSchema = new Schema(
       default: "Retail",
       required: true,
     },
+    leverage: {
+      type: Number,
+      default: 0,
+    },
     password: {
       type: String,
       required: true,

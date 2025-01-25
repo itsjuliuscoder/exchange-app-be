@@ -15,9 +15,7 @@ const app = express();
 // startEmailCronJob();
 
 // Middleware
-app.use(cors({
-  origin: 'http://localhost:3003',
-}));
+app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 

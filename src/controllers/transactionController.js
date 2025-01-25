@@ -3,7 +3,7 @@ const Wallet = require('../models/Wallet');
 
 exports.createTransaction = async (req, res) => {
   try {
-    const { walletId, type, amount, proof } = req.body;
+    const { userId, walletId, type, amount, proof } = req.body;
 
     // Find the wallet
     const wallet = await Wallet.findById(walletId);
@@ -13,6 +13,7 @@ exports.createTransaction = async (req, res) => {
 
     // Create new transaction
     const transaction = new Transaction({
+      userId,
       walletId,
       type,
       amount,
@@ -23,10 +24,10 @@ exports.createTransaction = async (req, res) => {
     await transaction.save();
 
     // Update wallet balance for deposit/withdrawal (we will process it in another API)
-    if (type === 'deposit') {
-      wallet.balance += amount;
-      await wallet.save();
-    }
+    // if (type === 'deposit') {
+    //   wallet.balance += amount;
+    //   await wallet.save();
+    // }
 
     res.status(201).json({ message: 'Transaction created successfully.', transaction });
   } catch (error) {

@@ -12,57 +12,59 @@ const createTrade = async (req, res) => {
     console.log("req.body -->", req.body);
   
     try {
-  
       // Validate user
       const user = await User.findById(userId);
       if (!user) return res.status(404).json({ message: 'User not found' });
-      // console.log("user -->", user);
+
+      const leverage = user.leverage
   
-      //Validate signal
+      // Validate signal
       const signal = await Signal.findById(signalId);
       if (!signal) return res.status(404).json({ message: 'Signal not found' });
-
+  
       // Determine wallet type
       const walletType = tradeType.toLowerCase() === 'buy' ? 'fiat' : 'crypto';
-      const wallet = await Wallet.findOne({ userId: userId });
-        
+      const wallet = await Wallet.findOne({ userId, walletType });
+  
       if (!wallet) {
         return res.status(400).json({ message: 'User wallet not found' });
       }
-
-      console.log("wallet -->", wallet);
-
   
       // Fetch the asset's current value
       const currentValue = 1000; // Placeholder value, replace with actual asset value fetching logic
   
       // Calculate the total cost of the trade
-      const totalCost = tradeType.toLowerCase() === 'buy' ? parseInt(amount) : units * currentValue;
+      const totalCost = tradeType.toLowerCase() === 'buy' ? amount : units * currentValue;
   
       // Validate wallet balance for trade
       if (tradeType.toLowerCase() === 'buy' && wallet.balance < totalCost) {
         return res.status(400).json({ message: 'Insufficient wallet balance' });
       }
-  
+      
       if (tradeType.toLowerCase() === 'sell' && wallet.balance < units) {
         return res.status(400).json({ message: 'Insufficient asset units to sell' });
       }
   
       // Deduct or add balance for the trade
-      const bal = tradeType.toLowerCase() == 'buy' ? wallet.balance - totalCost : wallet.balance + totalCost;
-
-      wallet.balance = bal;
+      wallet.balance = tradeType.toLowerCase() === 'buy'
+        ? wallet.balance - totalCost
+        : wallet.balance + totalCost;
   
       await wallet.save();
   
       // Create the trade record
       const trade = await Trade.create({
-        userId: userId,
-        signalId: signalId,
-        tradeType,
+        userId,
+        signalId,
         amount,
         units,
         interval,
+        direction: tradeType.toLowerCase(),
+        leverage,
+        startTime: new Date(),
+        processed: false,
+        status: 'ongoing',
+        profit: 0
       });
   
       res.json({ message: 'Trade executed successfully', trade });
@@ -73,7 +75,7 @@ const createTrade = async (req, res) => {
 
 const getAllTrades = async (req, res) => {
     try {
-        const trades = await Trade.find();
+        const trades = await Trade.find().sort({ createdAt: -1 });
         const tradesWithSignals = await Promise.all(trades.map(async (trade) => {
             const signal = await Signal.findById(trade.signalId);
             return {

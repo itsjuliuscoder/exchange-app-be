@@ -5,7 +5,7 @@ const Asset = require('../models/Asset');
 
 // Create a new trade
 const createSignal = async (req, res) => {
-    const { userId, symbol, direction, amount, unit, interval } = req.body;
+    const { userId, symbol, direction, amount, units, interval } = req.body;
 
     console.log("req.body -->", req.body);
 
@@ -26,7 +26,7 @@ const createSignal = async (req, res) => {
             symbol,
             direction,
             amount,
-            units: unit,
+            units: parseInt(units),
             interval
         });
 
@@ -38,7 +38,7 @@ const createSignal = async (req, res) => {
 
 const getAllSignals = async (req, res) => {
     try {
-        const signals = await Signal.find();
+        const signals = await Signal.find().sort({ createdAt: -1 });
         res.json(signals);
     } catch (error) {
         res.status(500).json({ error: error.message });

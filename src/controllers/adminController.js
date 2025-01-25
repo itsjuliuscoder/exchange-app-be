@@ -100,7 +100,6 @@ exports.getAllUsers = async (req, res) => {
     const users = await User.find().select('-password');
     const totalUsers = await User.countDocuments();
     res.json({ totalUsers, users });
-    res.json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -120,3 +119,46 @@ exports.getUserById = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.getTotalTransactions = async (req, res) => {
+  try {
+    const transactions = await Transaction.find();
+    const totalTransactions = await Transaction.countDocuments();
+
+    res.json({ totalTransactions, transactions });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+exports.getTotalWidthdrawalTrans = async (req, res) => {
+  try {
+    const withdrawals = await Transaction.find({ type: 'withdrawal' });
+    const totalWithdrawals = await Transaction.countDocuments({ type: 'withdrawal' });
+
+    res.json({ totalWithdrawals, withdrawals });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+exports.getTotalDepositTrans = async (req, res) => {
+  try {
+    const deposits = await Transaction.find({ type: 'deposit' });
+    const totalDeposits = await Transaction.countDocuments({ type: 'deposit' });
+
+    res.json({ totalDeposits, deposits });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+exports.getTotalRequestedWithdrawalTrans = async (req, res) => {
+  try {
+    const pendingWithdrawals = await Transaction.find({ type: 'withdrawal', status: 'pending' });
+    const totalPendingWithdrawals = await Transaction.countDocuments({ type: 'withdrawal', status: 'pending' });
+    res.json({ totalPendingWithdrawals, pendingWithdrawals });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
