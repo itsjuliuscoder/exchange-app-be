@@ -6,6 +6,8 @@ router.post('/create', walletControllers.createWallet);
 
 router.put('/update-balance', walletControllers.updateWalletBalance);
 
+router.put('/update-balance-manual', walletControllers.updateWalletBalanceManual);
+
 router.get('/list-all-wallets', walletControllers.listAllWallets);
 
 router.get('/get-wallet/:userId', walletControllers.getWalletByUserId);

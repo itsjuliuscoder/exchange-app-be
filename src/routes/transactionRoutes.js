@@ -1,10 +1,11 @@
 const express = require('express');
 const transactionController = require('../controllers/transactionController');
+const upload = require("../middlewares/fileUploadMiddleware");
 
 const router = express.Router();
 
 
-router.post('/create', transactionController.createTransaction);
+router.post('/create', upload.single("proof"),  transactionController.createTransaction);
 
 // Route to get all transactions
 //router.get('/', transactionController.getAllTransactions);
@@ -21,12 +22,14 @@ router.post('/create', transactionController.createTransaction);
 // Route to delete a transaction by ID
 //router.delete('/:id', transactionController.deleteTransaction);
 
-//router.post('/approve-withdrawal', transactionController.approveTransactionWithdrawal);
+router.post('/withdrawal', transactionController.withdrawTransaction);
 
-//router.post('/decline-withdrawal', transactionController.declineTransactionWithdrawal);
+router.post('/approve-withdrawal', transactionController.approveTransactionWithdrawal);
 
-//router.post('/approve-deposit', transactionController.approveTransactionDeposit);
+router.post('/decline-withdrawal', transactionController.declineTransactionWithdrawal);
 
-//router.post('/decline-deposit', transactionController.declineTransactionDeposit);
+router.post('/approve-deposit', transactionController.approveTransactionDeposit);
+
+router.post('/decline-deposit', transactionController.declineTransactionDeposit);
 
 module.exports = router;

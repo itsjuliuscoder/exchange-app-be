@@ -1,9 +1,15 @@
 const Transaction = require('../models/Transaction');
+const uploadFile = require('../services/fileUploadService');
 const Wallet = require('../models/Wallet');
 
 exports.createTransaction = async (req, res) => {
   try {
-    const { userId, walletId, type, amount, proof } = req.body;
+
+    const { userId, walletId, type, amount } = req.body;
+
+    if (!req.file) {
+        return res.status(400).json({ error: "Proof of transaction is required" });
+    }
 
     // Find the wallet
     const wallet = await Wallet.findById(walletId);
@@ -11,23 +17,26 @@ exports.createTransaction = async (req, res) => {
       return res.status(404).json({ message: 'Wallet not found.' });
     }
 
+    // Upload file to Cloudinary
+    const result = await uploadFile(req.file.buffer, `transactions/${userId}`);
+
+    // console.log(`response from cloudinary ${result} & url ${result.secure_url}`);
+
+    // Generate a unique transaction hash (e.g., using a UUID)
+    const transactionHash = require('crypto').randomBytes(16).toString('hex');
+
     // Create new transaction
     const transaction = new Transaction({
       userId,
       walletId,
       type,
       amount,
-      proof
+      proof: result.secure_url, // Cloudinary URL
+      transactionHash
     });
 
     // Save transaction
     await transaction.save();
-
-    // Update wallet balance for deposit/withdrawal (we will process it in another API)
-    // if (type === 'deposit') {
-    //   wallet.balance += amount;
-    //   await wallet.save();
-    // }
 
     res.status(201).json({ message: 'Transaction created successfully.', transaction });
   } catch (error) {
@@ -113,12 +122,16 @@ exports.withdrawTransaction = async (req, res) => {
         if (!wallet) return res.status(404).json({ message: 'Wallet not found.' });
     
         if (wallet.balance < amount) return res.status(400).json({ message: 'Insufficient balance.' });
+
+        // Generate a unique transaction hash (e.g., using a UUID)
+        const transactionHash = require('crypto').randomBytes(16).toString('hex');
     
         const withdrawalTransaction = new Transaction({
           userId,
           walletId,
           type: 'withdrawal',
           amount,
+          transactionHash
         });
         
         await withdrawalTransaction.save();

@@ -92,7 +92,7 @@ const getAllTrades = async (req, res) => {
 
 const tradeOutcome = async (req, res) => {
     const { tradeId, userId, signalId, status, profit } = req.body;
-  
+    
     try {
         
         const trade = await Trade.findById(tradeId);
@@ -255,5 +255,6 @@ module.exports = {
     getAllCoins,
     getAllMarkets,
     createTrade,
-    getAllTrades
+    getAllTrades,
+    tradeOutcome
 };

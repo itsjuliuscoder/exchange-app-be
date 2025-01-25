@@ -11,10 +11,10 @@ async function callTradeOutcomeAPI(trade) {
     status: trade.status,
     profit,
   };
-
+  
   try {
     // Replace this URL with your actual API endpoint
-    const response = await axios.post('http://localhost:5001/api/trade/outcome', payload);
+    const response = await axios.post('http://localhost:5001/api/trading/outcome', payload);
     return response.data;
   } catch (error) {
     console.error(`Failed to execute trade outcome for trade ID: ${trade.tradeId}`, error.message);

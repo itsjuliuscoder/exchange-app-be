@@ -7,6 +7,7 @@ const transactionSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   status: { type: String, enum: ['pending', 'approved', 'declined'], default: 'pending' },
   proof: { type: String },  // URL to proof (optional)
+  transactionHash: { type: String, unique: true }, // Ensure unique and sparse index
   createdAt: { type: Date, default: Date.now }
 });
 

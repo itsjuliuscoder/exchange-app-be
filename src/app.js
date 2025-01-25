@@ -9,10 +9,12 @@ const adminRouter = require('./routes/adminRoutes');
 const transactionRouter = require('./routes/transactionRoutes');
 const walletRouter = require('./routes/walletRoutes');
 // const startEmailCronJob = require('./jobs/emailCron');
+const startTradeCronJob = require('./jobs/tradeCron');
 
 const app = express();
 
 // startEmailCronJob();
+startTradeCronJob();
 
 // Middleware
 app.use(cors());

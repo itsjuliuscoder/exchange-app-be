@@ -52,6 +52,36 @@ exports.updateWalletBalance = async (req, res) => {
   }
 };
 
+exports.updateWalletBalanceManual = async (req, res) => {
+  try {
+    const { userId, amount, transType } = req.body;
+
+    console.log("this is req body details --> ", req.body)
+
+    // Find wallet by userId
+    const wallet = await Wallet.findOne({ userId });
+    if (!wallet) {
+      return res.status(404).json({ message: 'Wallet not found.' });
+    }
+    if (transType === 'debit') {
+      if (wallet.balance < amount) {
+        return res.status(400).json({ message: 'Insufficient balance.' });
+      }
+      wallet.balance -= parseInt(amount);
+    } else if (transType === 'credit') {
+      wallet.balance += parseInt(amount);
+    } else {
+      return res.status(400).json({ message: 'Invalid transaction type.' });
+    }
+    
+    await wallet.save();
+
+    res.status(200).json({ message: 'Wallet balance updated successfully!', wallet });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 exports.listAllWallets = async (req, res) => {
   try {
     const { userId } = req.params; // Assume authentication middleware sets req.user.id
